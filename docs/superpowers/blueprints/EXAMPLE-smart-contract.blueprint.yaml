@@ -1,0 +1,141 @@
+schemaVersion: 1
+name: VotingContract
+description: On-chain voting with admin control
+language: Solidity
+framework: OpenZeppelin
+kind: EVM
+
+events:
+  - name: ProposalCreated
+    fields:
+      - name: proposalId
+        type: uint256
+        indexed: true
+      - name: creator
+        type: address
+        indexed: true
+      - name: title
+        type: string
+        indexed: false
+
+  - name: VoteCast
+    fields:
+      - name: proposalId
+        type: uint256
+        indexed: true
+      - name: voter
+        type: address
+        indexed: true
+
+operations:
+  - name: createProposal
+    type: mutation
+    target: VotingContract
+    function: createProposal(string,uint256)
+    description: Admin creates a new proposal on-chain
+    input:
+      fields:
+        - name: title
+          type: string
+          required: true
+        - name: deadline
+          type: uint256
+          required: true
+    validations:
+      - step: 1
+        name: onlyOwner
+        type: auth
+        description: msg.sender must be contract owner
+        onFail: OwnableUnauthorized
+      - step: 2
+        name: validateDeadline
+        type: input
+        description: deadline must be > block.timestamp
+        onFail: InvalidDeadline
+      - step: 3
+        name: checkDuplicate
+        type: state
+        description: No proposal with same keccak256(title)
+        onFail: DuplicateProposal
+    output:
+      fields:
+        - name: proposalId
+          type: uint256
+          required: true
+    errors:
+      - name: OwnableUnauthorized
+        description: Caller is not the owner
+      - name: InvalidDeadline
+        description: Deadline must be in the future
+      - name: DuplicateProposal
+        description: Proposal with this title already exists
+
+  - name: castVote
+    type: mutation
+    target: VotingContract
+    function: castVote(uint256)
+    description: User votes for a proposal
+    input:
+      fields:
+        - name: proposalId
+          type: uint256
+          required: true
+    validations:
+      - step: 1
+        name: proposalExists
+        type: state
+        description: proposalId must exist in storage
+        onFail: ProposalNotFound
+      - step: 2
+        name: votingOpen
+        type: state
+        description: block.timestamp must be < proposal.deadline
+        onFail: VotingClosed
+      - step: 3
+        name: preventDoubleVote
+        type: state
+        description: voter must not have voted already
+        onFail: AlreadyVoted
+    output:
+      fields: []
+    errors:
+      - name: ProposalNotFound
+        description: Proposal does not exist
+      - name: VotingClosed
+        description: Voting period has ended
+      - name: AlreadyVoted
+        description: User has already voted
+
+  - name: getProposal
+    type: query
+    target: VotingContract
+    function: getProposal(uint256)
+    description: View proposal details
+    input:
+      fields:
+        - name: proposalId
+          type: uint256
+          required: true
+    validations:
+      - step: 1
+        name: proposalExists
+        type: state
+        description: proposalId must exist
+        onFail: ProposalNotFound
+    output:
+      fields:
+        - name: title
+          type: string
+          required: true
+        - name: deadline
+          type: uint256
+          required: true
+        - name: voteCount
+          type: uint256
+          required: true
+        - name: creator
+          type: address
+          required: true
+    errors:
+      - name: ProposalNotFound
+        description: Proposal does not exist

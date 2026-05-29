@@ -33,6 +33,8 @@ Before defining tasks, map out which files will be created or modified and what 
 
 This structure informs the task decomposition. Each task should produce self-contained changes that make sense independently.
 
+**Blueprint reference:** If `.blueprint.yaml` files exist in `docs/superpowers/blueprints/`, read them before decomposition. Reference operations, validations, entities, and fields from blueprints directly in task descriptions — so implementer subagents don't need to guess validation logic or data structures.
+
 ## Bite-Sized Task Granularity
 
 **Each step is one action (2-5 minutes):**

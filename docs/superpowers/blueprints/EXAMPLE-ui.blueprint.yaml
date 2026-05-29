@@ -1,0 +1,78 @@
+schemaVersion: 1
+name: Voting DApp
+description: On-chain voting application frontend
+kind: Web SPA
+
+pages:
+  - name: dashboard
+    route: /dashboard
+    components:
+      - ProposalList
+      - VoteButton
+      - CreateProposalForm
+    actions:
+      - castVote
+      - createProposal
+      - viewResults
+
+  - name: profile
+    route: /profile
+    components:
+      - UserInfo
+      - VoteHistory
+    actions:
+      - connectWallet
+
+actions:
+  - name: castVote
+    page: dashboard
+    trigger: onClick
+    validation: wallet must be connected
+    onError: display error toast
+
+  - name: createProposal
+    page: dashboard
+    trigger: onSubmit
+    validation: caller must be admin
+    onError: display error toast "Only admin can create proposals"
+
+  - name: viewResults
+    page: dashboard
+    trigger: onLoad
+    validation: none
+    onError: display empty state
+
+entities:
+  - entity: Proposal
+    fields:
+      - name: id
+        type: string
+        required: true
+      - name: title
+        type: string
+        required: true
+      - name: deadline
+        type: string
+        required: true
+      - name: voteCount
+        type: number
+        required: false
+
+  - entity: User
+    fields:
+      - name: address
+        type: string
+        required: true
+      - name: isAdmin
+        type: boolean
+        required: true
+
+states:
+  - name: loading
+    type: loading
+  - name: empty
+    type: empty
+  - name: error
+    type: error
+  - name: connected
+    type: success

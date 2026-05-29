@@ -1,0 +1,107 @@
+schemaVersion: 1
+name: VotingApp
+description: Voting application database
+type: SQL
+engine: PostgreSQL
+
+collections:
+  - name: users
+    description: Registered users with roles
+    fields:
+      - name: id
+        type: uuid
+        required: true
+        unique: true
+      - name: wallet_address
+        type: string
+        required: true
+        unique: true
+      - name: role
+        type: string
+        required: true
+        default: "voter"
+      - name: created_at
+        type: timestamp
+        required: true
+        default: "now()"
+    indexes:
+      - fields:
+          - wallet_address
+        unique: true
+
+  - name: proposals
+    description: Proposals created by admins
+    fields:
+      - name: id
+        type: uuid
+        required: true
+        unique: true
+      - name: title
+        type: string
+        required: true
+      - name: deadline
+        type: timestamp
+        required: true
+      - name: creator_id
+        type: uuid
+        required: true
+        relation: users.id
+      - name: contract_proposal_id
+        type: integer
+        required: false
+      - name: status
+        type: string
+        required: true
+        default: "active"
+      - name: created_at
+        type: timestamp
+        required: true
+        default: "now()"
+    indexes:
+      - fields:
+          - creator_id
+        unique: false
+      - fields:
+          - status
+        unique: false
+    relationships:
+      - type: belongsTo
+        target: users
+        via: creator_id
+
+  - name: votes
+    description: On-chain vote tracking
+    fields:
+      - name: id
+        type: uuid
+        required: true
+        unique: true
+      - name: proposal_id
+        type: uuid
+        required: true
+        relation: proposals.id
+      - name: voter_id
+        type: uuid
+        required: true
+        relation: users.id
+      - name: tx_hash
+        type: string
+        required: true
+      - name: created_at
+        type: timestamp
+        required: true
+        default: "now()"
+    indexes:
+      - fields:
+          - proposal_id
+        unique: false
+      - fields:
+          - voter_id
+        unique: false
+    relationships:
+      - type: belongsTo
+        target: proposals
+        via: proposal_id
+      - type: belongsTo
+        target: users
+        via: voter_id

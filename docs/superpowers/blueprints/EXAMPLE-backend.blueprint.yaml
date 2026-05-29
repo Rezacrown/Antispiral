@@ -1,0 +1,99 @@
+schemaVersion: 1
+name: Voting API
+description: Backend service for on-chain voting dApp
+language: TypeScript
+framework: Express
+kind: REST
+
+operations:
+  - name: getProposals
+    type: query
+    method: GET
+    endpoint: /api/proposals
+    description: List all proposals with vote counts
+    input:
+      fields:
+        - name: page
+          type: number
+          required: false
+          description: Pagination page
+        - name: limit
+          type: number
+          required: false
+          description: Items per page
+    validations: []
+    output:
+      fields:
+        - name: proposals
+          type: "Proposal[]"
+          required: true
+        - name: total
+          type: number
+          required: true
+    errors:
+      - name: RATE_LIMITED
+        description: Too many requests
+
+  - name: createProposal
+    type: mutation
+    method: POST
+    endpoint: /api/proposals
+    description: Admin creates a new proposal
+    input:
+      fields:
+        - name: title
+          type: string
+          required: true
+          description: Proposal title (1-200 chars)
+        - name: deadline
+          type: string
+          required: true
+          description: ISO date string, must be in future
+    validations:
+      - step: 1
+        name: authenticateUser
+        type: auth
+        description: Request must have valid JWT
+        onFail: UNAUTHORIZED
+      - step: 2
+        name: authorizeAdmin
+        type: auth
+        description: User must have admin role
+        onFail: FORBIDDEN
+      - step: 3
+        name: validateTitle
+        type: input
+        description: Title must be 1-200 characters
+        onFail: INVALID_TITLE
+      - step: 4
+        name: validateDeadline
+        type: input
+        description: Deadline must be after current time + 1 hour
+        onFail: INVALID_DEADLINE
+      - step: 5
+        name: checkDuplicate
+        type: business
+        description: No existing proposal with same title
+        onFail: DUPLICATE_TITLE
+    output:
+      fields:
+        - name: id
+          type: string
+          required: true
+        - name: title
+          type: string
+          required: true
+        - name: deadline
+          type: string
+          required: true
+    errors:
+      - name: UNAUTHORIZED
+        description: Missing or invalid JWT
+      - name: FORBIDDEN
+        description: User is not admin
+      - name: INVALID_TITLE
+        description: Title must be 1-200 characters
+      - name: INVALID_DEADLINE
+        description: Deadline must be in the future
+      - name: DUPLICATE_TITLE
+        description: Proposal with this title already exists
